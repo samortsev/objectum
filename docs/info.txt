@@ -1,0 +1,13 @@
+NPM
+
+npm set init.author.name "Dmitry Samortsev"
+npm set init.author.email "objectum.ru@gmail.com"
+npm set init.author.url "http://objectum.org"
+npm adduser
+objectum
+objectum.ru@gmail.com
+p7
+
+GITHUB
+
+objectum/objectum p7
