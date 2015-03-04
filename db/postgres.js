@@ -25,17 +25,9 @@ var Postgres = Backbone.Model.extend ({
 	connect: function (opts, cb) {
 		var me = this;
 		me.client = new pg.Client (opts.systemDB ? me.adminConnection : me.connection);
-		client.connect (function (err) {
-			if (err) {
-				console.error (err);
-				cb (err);
-			} else {
-				client.pauseDrain ();
-				cb ();
-			}
-		});
+		client.connect (cb);
 		client.on ("error", function (err) {
-			console.error ("client error", err);
+			console.error ("postgres client error", err);
 		});
 	},
 	createDatabase: function () {

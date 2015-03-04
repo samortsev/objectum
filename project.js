@@ -1,7 +1,7 @@
 var Backbone = require ("backbone");
 var _ = require ("underscore");
-var Postgres = require (__dirname + "/db/postgres");
 var Project = Backbone.Model.extend ({
+	Postgres: require (__dirname + "/db/postgres"),
 	rootDir: null,
 	adminPassword: "d033e22ae348aeb5660fc2140aec35850c4da997",
 	anonymous: 1,
@@ -22,17 +22,17 @@ var Project = Backbone.Model.extend ({
 	createClient: function () {
 		var me = this;
 		if (me.database == "postgres") {
-			var client = new Postgres ({project: me});
+			var client = new me.Postgres ({project: me});
 			return client;
 		};
 	},
-	create: function () {
+	createDatabase: function (cb) {
 		var me = this;
 		var client = me.createClient ();
-		client.connect ({systemDB: 1}, function (err) {
+		client.createDatabase (function (err) {
 		});
 	},
-	remove: function () {
+	removeDatabase: function () {
 	}
 });
 module.exports = Project;

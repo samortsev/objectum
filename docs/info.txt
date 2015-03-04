@@ -11,3 +11,9 @@ p7
 GITHUB
 
 objectum/objectum p7
+
+Error:
+assert, verror wrap
+
+Docs:
+jsdoc (grunt-jsdoc docco dox) ndoc
