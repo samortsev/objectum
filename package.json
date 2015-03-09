@@ -2,9 +2,13 @@
   "name": "objectum",
   "version": "0.4.0",
   "description": "platform",
-  "main": "objectum.js",
+  "main": "./lib/objectum.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/objectum/objectum.git"
   },
   "author": "Dmitry Samortsev <samortsev@gmail.com> (http://objectum.org)",
   "license": "Apache License 2.0",
@@ -17,5 +21,9 @@
     "socket.io": "^1.3.4",
     "underscore": "^1.8.2",
     "verror": "^1.6.0"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-jsdoc": "^0.5.8"
   }
 }
