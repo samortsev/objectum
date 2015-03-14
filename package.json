@@ -2,7 +2,7 @@
   "name": "objectum",
   "version": "0.4.0",
   "description": "platform",
-  "main": "./lib/objectum.js",
+  "main": "./server/objectum.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

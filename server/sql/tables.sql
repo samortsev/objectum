@@ -1,19 +1,21 @@
-create table <%=schema%>_schema (
+create table <%=schema%>_project (
 	_id <%=id%> not null,
 	_name <%=string%>,
 	_code <%=string%>,
 	_description <%=text%>,
+	_file <%=string%>,
+	_url <%=string%>,
 	_opts <%=text%>
 ) <%=tablespace%>;
 
 create table <%=schema%>_revision (
 	_id <%=id%> not null,
-	_subject_id <%=number%>,
+	_user_id <%=number%>,
 	_date <%=timestamp%>,
 	_description <%=text%>,
 	_remote_addr <%=string%>,
 	_opts <%=text%>,
-	_schema_id <%=number%>,
+	_project_id <%=number%>,
 	_record_id <%=number%>
 ) <%=tablespace%>;
 
@@ -27,7 +29,7 @@ create table <%=schema%>_class (
 	_opts <%=text%>,
 	_start_id <%=number%>,
 	_end_id <%=number%>,
-	_schema_id <%=number%>,
+	_project_id <%=number%>,
 	_record_id <%=number%>
 ) <%=tablespace%>;
 
@@ -41,7 +43,7 @@ create table <%=schema%>_class_attr (
 	_opts <%=text%>,
 	_start_id <%=number%>,
 	_end_id <%=number%>,
-	_schema_id <%=number%>,
+	_project_id <%=number%>,
 	_record_id <%=number%>
 ) <%=tablespace%>;
 
@@ -51,7 +53,7 @@ create table <%=schema%>_object (
 	_opts <%=text%>,
 	_start_id <%=number%>,
 	_end_id <%=number%>,
-	_schema_id <%=number%>,
+	_project_id <%=number%>,
 	_record_id <%=number%>
 ) <%=tablespace%>;
 
@@ -65,7 +67,7 @@ create table <%=schema%>_object_attr (
 	_opts <%=text%>,
 	_start_id <%=number%>,
 	_end_id <%=number%>,
-	_schema_id <%=number%>,
+	_project_id <%=number%>,
 	_record_id <%=number%>
 ) <%=tablespace%>;
 
@@ -80,7 +82,7 @@ create table <%=schema%>_view (
 	_opts <%=text%>,
 	_start_id <%=number%>,
 	_end_id <%=number%>,
-	_schema_id <%=number%>,
+	_project_id <%=number%>,
 	_record_id <%=number%>
 ) <%=tablespace%>;
 
@@ -94,7 +96,7 @@ create table <%=schema%>_query (
 	_opts <%=text%>,
 	_start_id <%=number%>,
 	_end_id <%=number%>,
-	_schema_id <%=number%>,
+	_project_id <%=number%>,
 	_record_id <%=number%>
 ) <%=tablespace%>;
 
@@ -112,7 +114,7 @@ create table <%=schema%>_query_attr (
 	_opts <%=text%>,
 	_start_id <%=number%>,
 	_end_id <%=number%>,
-	_schema_id <%=number%>,
+	_project_id <%=number%>,
 	_record_id <%=number%>
 ) <%=tablespace%>;
 
@@ -126,7 +128,7 @@ create table <%=schema%>_action (
 	_opts <%=text%>,
 	_start_id <%=number%>,
 	_end_id <%=number%>,
-	_schema_id <%=number%>,
+	_project_id <%=number%>,
 	_record_id <%=number%>
 ) <%=tablespace%>;
 

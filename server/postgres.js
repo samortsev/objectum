@@ -11,27 +11,54 @@ var async = require ("async");
 var userid = require ("userid");
 var Postgres = Backbone.Model.extend (/** @lends Postgres.prototype */{
 	/**
+	 * Defaults
+	 **/
+	defaults: {
+		rootDir: null,
+		host: null,
+		port: null,
+		dbaUsername: null,
+		dbaPassword: null,
+		dbUsername: null,
+		dbPassword: null,
+		dbDir: null,
+		connection: null,
+		adminConnection: null,
+		tags: {}
+	},
+	/**
 	 * @class Postgres
 	 * @augments Backbone.Model
 	 * @constructs Postgres
 	 */
 	initialize: function (opts) {
+		assert (opts);
+		assert.fail (typeof (opts.pid), "string");
+		assert.fail (typeof (opts.rootDir), "string");
+		assert.fail (typeof (opts.host), "string");
+		assert.fail (typeof (opts.port), "number");
+		assert.fail (typeof (opts.dbaUsername), "string");
+		assert.fail (typeof (opts.dbaPassword), "string");
+		assert.fail (typeof (opts.dbUsername), "string");
+		assert.fail (typeof (opts.dbPassword), "string");
+		assert.fail (typeof (opts.dbDir), "string");
 		var me = this;
-		me.project = opts.project;
-		me.connection = "tcp://" + me.project.dbUsername + ":" + me.project.dbPassword + "@" + me.project.host + ":" + me.project.port + "/" + me.project.code;
-		me.adminConnection = "tcp://" + me.project.dbaUsername + ":" + me.project.dbaPassword + "@" + me.project.host + ":" + me.project.port + "/postgres";
-		me.tags = {
-			schema: me.project.code + ".",
-			tablespace: "tablespace " + me.project.code,
-			id: "bigserial",
-			number: "bigint",
-			number_value: "numeric",
-			text: "text",
-			timestamp: "timestamp (6)",
-			string: "varchar (1024)",
-			string_value: "text",
-			toc_id: "object_id bigint not null, primary key (object_id)"
-		};
+		me.set ({
+			connection: "tcp://" + me.get ("dbUsername") + ":" + me.get ("dbPassword") + "@" + me.get ("host") + ":" + me.get ("port") + "/" + me.get ("id"),
+			adminConnection: "tcp://" + me.get ("dbaUsername") + ":" + me.get ("dbaPassword") + "@" + me.get ("host") + ":" + me.get ("port") + "/postgres"
+			tags: {
+				schema: me.get ("pid") + ".",
+				tablespace: "tablespace " + me.get ("pid"),
+				id: "bigserial",
+				number: "bigint",
+				number_value: "numeric",
+				text: "text",
+				timestamp: "timestamp (6)",
+				string: "varchar (1024)",
+				string_value: "text",
+				toc_id: "object_id bigint not null, primary key (object_id)"
+			}
+		});
 	},
 	/**
 	 * Connect to database
@@ -44,7 +71,7 @@ var Postgres = Backbone.Model.extend (/** @lends Postgres.prototype */{
 		assert.equal (typeof (opts), "object");
 		assert.equal (typeof (cb), "function");
 		var me = this;
-		var connection = opts.system ? me.adminConnection : me.connection;
+		var connection = opts.system ? me.get ("adminConnection") : me.get ("connection");
 		me.client = new pg.Client (connection);
 		me.client.connect (function (err) {
 			if (err) err = new VError (err, "Failed to connect %s", connection);
@@ -81,16 +108,16 @@ var Postgres = Backbone.Model.extend (/** @lends Postgres.prototype */{
 		var me = this;
 		async.series ([
 			function (cb) {
-				fs.exists (me.project.dbDir, function (exists) {
+				fs.exists (me.get ("dbDir"), function (exists) {
 					if (exists) {
 						cb ();
 					} else {
-						fs.mkdir (me.project.dbDir, function (err) {
+						fs.mkdir (me.get ("dbDir"), function (err) {
 							if (err) {
-								cb (new VError (err, "Failed mkdir %s", me.project.dbDir));
+								cb (new VError (err, "Failed mkdir %s", me.get ("dbDir")));
 							} else {
-								fs.chown (me.project.dbDir, userid.uid ("postgres"), userid.gid ("postgres"), function (err) {
-									cb (err ? new VError (err, "Failed chown postgres:postgres on %s", me.project.dbDir) : null);
+								fs.chown (me.get ("dbDir"), userid.uid ("postgres"), userid.gid ("postgres"), function (err) {
+									cb (err ? new VError (err, "Failed chown postgres:postgres on %s", me.get ("dbDir")) : null);
 								});
 							};
 						});
@@ -101,29 +128,29 @@ var Postgres = Backbone.Model.extend (/** @lends Postgres.prototype */{
 				me.connect ({system: 1}, cb);
 			},
 			function (cb) {
-				me.query ("create role " + me.project.dbUsername + " noinherit login password '" + me.project.dbPassword + "'", cb);
+				me.query ("create role " + me.get ("dbUsername") + " noinherit login password '" + me.get ("dbPassword") + "'", cb);
 			},
 			function (cb) {
-				me.query ("create tablespace " + me.project.code + " owner " + me.project.dbUsername + " location '" + me.project.dbDir + "'", cb);
+				me.query ("create tablespace " + me.get ("pid") + " owner " + me.get ("dbUsername") + " location '" + me.get ("dbDir") + "'", cb);
 			},	
 			function (cb) {
-				me.query ("create database " + me.project.code + " owner " + me.project.dbUsername + " encoding 'utf8' tablespace " + me.project.code, cb);
+				me.query ("create database " + me.get ("pid") + " owner " + me.get ("dbUsername") + " encoding 'utf8' tablespace " + me.get ("pid"), cb);
 			},
 			function (cb) {
 				me.disconnect ();
 				me.connect (null, cb);
 			},
 			function (cb) {
-				me.query ("create schema " + me.project.code + " authorization " + me.project.dbUsername, cb);
+				me.query ("create schema " + me.get ("pid") + " authorization " + me.get ("dbUsername"), cb);
 			},
 			function (cb) {
 				async.eachSeries (["tables.sql", "indexes.sql", "data.sql"], function (filename, cb) {
-					fs.readFile (__dirname + "/" + filename, "utf8", function (err, data) {
+					fs.readFile (__dirname + "/sql/" + filename, "utf8", function (err, data) {
 						if (err) {
 							cb (new VError (err, "Failed loading file %s", filename));
 						} else {
-							me.query (_.template (data)(me.tags), function (err) {
-								cb (err ? new VError (err, "Failed query:\n%s", _.template (data)(me.tags)) : null);
+							me.query (_.template (data)(me.get ("tags")), function (err) {
+								cb (err ? new VError (err, "Failed query:\n%s", _.template (data)(me.get ("tags"))) : null);
 							});
 						};
 					});
@@ -131,7 +158,7 @@ var Postgres = Backbone.Model.extend (/** @lends Postgres.prototype */{
 			}
 		], function (err) {
 			me.disconnect ();
-			cb (err ? new VError (err, "Failed to create database %s", me.project.code) : null);
+			cb (err ? new VError (err, "Failed to create database %s", me.get ("pid")) : null);
 		});
 	},
 	/**
@@ -146,7 +173,7 @@ var Postgres = Backbone.Model.extend (/** @lends Postgres.prototype */{
 				me.connect (null, cb);
 			},
 			function (cb) {
-				me.query ("drop schema " + me.project.code + " cascade", function () {
+				me.query ("drop schema " + me.get ("pid") + " cascade", function () {
 					cb ();
 				});
 			},
@@ -155,17 +182,17 @@ var Postgres = Backbone.Model.extend (/** @lends Postgres.prototype */{
 				me.connect ({system: 1}, cb);
 			},
 			function (cb) {
-				me.query ("drop database " + me.project.code, function () {
+				me.query ("drop database " + me.get ("pid"), function () {
 					cb ();
 				});
 			},
 			function (cb) {
-				me.query ("drop tablespace " + me.project.code, function () {
+				me.query ("drop tablespace " + me.get ("pid"), function () {
 					cb ();
 				});
 			},
 			function (cb) {
-				me.query ("drop role " + me.project.dbUsername, function () {
+				me.query ("drop role " + me.get ("dbUsername"), function () {
 					cb ();
 				});
 			}
