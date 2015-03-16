@@ -1,72 +1,73 @@
 Objectum = {};
 Objectum.Resource = Backbone.Model.extend ({
-	initialize: function (opts) {
-		var me = this;
-	},
 	sync: function (method, model, opts) {
-		console.log (method, model, opts);
-	},
-	fetch: function (opts) {
-		console.log (opts);
-	},
-	save: function (attrs, opts) {
-		console.log (attrs, opts);
+		var me = this;
+		Objectum.socket.emit ("cmd", {
+			pid: me.id,
+			rsc: model.rsc,
+			method: method,
+			data: _.extend ({id: model.id || model.cid}, model.changed)
+		}, function (cmd) {
+			var m = Objectum.createModel (cmd.rsc, cmd.data);
+			me.collection [cmd.rsc].add (m, {merge: true});
+			opts.success (m, cmd);
+		});
 	}
 });
 Objectum.Class = Objectum.Resource.extend ({
 	initialize: function (opts) {
-		var me = this;
+		this.rsc = "class";
 	}
 });
 Objectum.ClassAttr = Objectum.Resource.extend ({
 	initialize: function (opts) {
-		var me = this;
+		this.rsc = "classAttr";
 	}
 });
 Objectum.Object = Objectum.Resource.extend ({
 	initialize: function (opts) {
-		var me = this;
+		this.rsc = "object";
 	}
 });
 Objectum.View = Objectum.Resource.extend ({
 	initialize: function (opts) {
-		var me = this;
+		this.rsc = "view";
 	}
 });
 Objectum.Query = Objectum.Resource.extend ({
 	initialize: function (opts) {
-		var me = this;
+		this.rsc = "query";
 	}
 });
 Objectum.QueryAttr = Objectum.Resource.extend ({
 	initialize: function (opts) {
-		var me = this;
+		this.rsc = "queryAttr";
 	}
 });
 Objectum.Action = Objectum.Resource.extend ({
 	initialize: function (opts) {
-		var me = this;
+		this.rsc = "action";
 	}
 });
-Objectum.Classes = Backbone.Collection.Extend ({
+Objectum.Classes = Backbone.Collection.extend ({
 	model: Objectum.Class
 });
-Objectum.ClassAttrs = Backbone.Collection.Extend ({
+Objectum.ClassAttrs = Backbone.Collection.extend ({
 	model: Objectum.ClassAttr
 });
-Objectum.Objects = Backbone.Collection.Extend ({
+Objectum.Objects = Backbone.Collection.extend ({
 	model: Objectum.Object
 });
-Objectum.Views = Backbone.Collection.Extend ({
+Objectum.Views = Backbone.Collection.extend ({
 	model: Objectum.View
 });
-Objectum.Queries = Backbone.Collection.Extend ({
+Objectum.Queries = Backbone.Collection.extend ({
 	model: Objectum.Query
 });
-Objectum.QueryAttrs = Backbone.Collection.Extend ({
+Objectum.QueryAttrs = Backbone.Collection.extend ({
 	model: Objectum.QueryAttr
 });
-Objectum.Actions = Backbone.Collection.Extend ({
+Objectum.Actions = Backbone.Collection.extend ({
 	model: Objectum.Action
 });
 Objectum.Project = Backbone.Model.extend ({
@@ -84,58 +85,87 @@ Objectum.Project = Backbone.Model.extend ({
 		};
 		me.socket.emit ("cmd", {
 			pid: opts.id,
-			resource: "project",
-			action: "auth",
+			rsc: "project",
+			method: "auth",
 			data: {
 				username: opts.username,
-				password: opts.password
+				password: opts.password,
+				sid: me.getSessionId ()
 			}
 		}, function (data) {
-
-			console.log (data);
+			me.setSessionId (data.sid);
+			Objectum.sid = data.sid;
 		});
+	},
+	setSessionId: function (sid) {
+		var cookieString = "sid=" + sid;
+		var expires = new Date ();
+		expires.setDate (expires.getDate () + 30);
+		cookieString += "; expires=" + expires.toGMTString ();
+		document.cookie = cookieString;
+	},
+	getSessionId: function () {
+		var results = document.cookie.match ("(^|;) ?sid=([^;]*)(;|$)");
+		if (results) {
+			return (unescape (results [2]));
+		} else {
+			return null;
+		};
+	},
+	removeSessionId: function () {
+		var cookieDate = new Date ();
+		cookieDate.setTime (cookieDate.getTime () - 1);
+		document.cookie = "sid=; expires=" + cookieDate.toGMTString ();
+	},
+	createModel: function (rsc, data) {
+		var m;
+		switch (rsc) {
+			case "class":
+				m = new Objectum.Class (data);
+				break;
+			case "classAttr":
+				m = new Objectum.ClassAttr (data);
+				break;
+			case "object":
+				m = new Objectum.Object (data);
+				break;
+			case "view":
+				m = new Objectum.View (data);
+				break;
+			case "query":
+				m = new Objectum.Query (data);
+				break;
+			case "queryAttr":
+				m = new Objectum.QueryAttr (data);
+				break;
+			case "action":
+				m = new Objectum.Action (data);
+				break;
+		};
+		return m;
 	},
 	loadData: function (data) {
 		var me = this;
 		data = _.isArray (data) ? data : [data];
 		_.each (data, function (cmd) {
-			var o = null;
-			switch (cmd.rsc) {
-				case "class":
-					o = new Objectum.Class (cmd);
-					break;
-				case "classAttr":
-					o = new Objectum.ClassAttr (cmd);
-					break;
-				case "object":
-					o = new Objectum.Object (cmd);
-					break;
-				case "view":
-					o = new Objectum.View (cmd);
-					break;
-				case "query":
-					o = new Objectum.Query (cmd);
-					break;
-				case "queryAttr":
-					o = new Objectum.QueryAttr (cmd);
-					break;
-				case "action":
-					o = new Objectum.Action (cmd);
-					break;
-			};
-			me.collection [cmd.rsc].add (o, {merge: true});
+			var m = me.createModel (cmd.rsc, cmd.data);
+			me.collection [cmd.rsc].add (m, {merge: true});
 		});
 	},
 	getRsc: function (rsc, id, cb) {
 		var me = this;
-		var o = me.rsc [rsc].get (id);
-		if (o) {
-			cb (null, o);
+		if (me.queue && cb) {
+			cb ("Commands is collecting.");
+			return;
+		};
+		var m = me.rsc [rsc].get (id);
+		if (m) {
+			cb (null, m);
 		} else {
 			me.socket.emit ("cmd", [{
 				pid: me.id,
 				rsc: rsc,
-				action: "read",
+				method: "read",
 				data: {
 					id: id
 				}
@@ -147,16 +177,20 @@ Objectum.Project = Backbone.Model.extend ({
 	},
 	removeRsc: function (rsc, id, cb) {
 		var me = this;
-		var o = me.collection [rsc].get (id);
-		if (o) {
-			o.destroy ({wait: true, success: function (model, response) {
+		if (me.queue && cb) {
+			cb ("Commands is collecting.");
+			return;
+		};
+		var m = me.collection [rsc].get (id);
+		if (m) {
+			m.destroy ({wait: true, success: function (model, response) {
 				cb ();
 			}});
 		} else {
 			me.socket.emit ("cmd", [{
 				pid: me.id,
 				rsc: rsc,
-				action: "delete",
+				method: "delete",
 				data: {
 					id: id
 				}
@@ -164,6 +198,17 @@ Objectum.Project = Backbone.Model.extend ({
 				cb ();
 			});
 		};
+	},
+	createRsc: function (rsc, data, cb) {
+		var me = this;
+		if (me.queue && cb) {
+			cb ("Commands is collecting.");
+			return;
+		};
+		var m = me.createModel (rsc, data);
+		m.save ({success: function (model, response) {
+			cb (null, m);
+		}});
 	},
 	getClass: function (id, cb) {
 		this.getRsc ("class", id, cb);
@@ -207,43 +252,45 @@ Objectum.Project = Backbone.Model.extend ({
 	removeAction: function (id, cb) {
 		this.removeRsc ("action", id, cb);
 	},
+	createClass: function (attrs, cb) {
+		this.createRsc ("class", attrs, cb);
+	},
+	createClassAttr: function (attrs, cb) {
+		this.createRsc ("classAttr", attrs, cb);
+	},
+	createObject: function (attrs, cb) {
+		this.createRsc ("object", attrs, cb);
+	},
+	createView: function (attrs, cb) {
+		this.createRsc ("view", attrs, cb);
+	},
+	createQuery: function (attrs, cb) {
+		this.createRsc ("query", attrs, cb);
+	},
+	createQueryAttr: function (attrs, cb) {
+		this.createRsc ("queryAttr", attrs, cb);
+	},
+	createAction: function (attrs, cb) {
+		this.createRsc ("action", attrs, cb);
+	},
 	multi: function (description) {
-		var me = this;
 		this.queue = [{
 			pid: me.id,
-			rsc: "project",
-			action: "startTransaction",
+			rsc: "session",
+			method: "multi",
 			data: {
 				description: description
 			}
 		}];
 	},
-	exec: function () {
+	exec: function (cb) {
 		var me = this;
-		this.queue.push ({
-			pid: me.id,
-			rsc: "project",
-			action: "commitTransaction"
-		});
 		me.socket.emit ("cmd", me.queue, function (data) {
+			me.loadData (data);
 			cb ();
 		});
 	},
 	discard: function () {
 		this.queue = null;
 	}
-});
-var $o = new Objectum.Project ({
-	socket: socket,
-	id: "prj",
-	username: "admin",
-	password: "d033e22ae348aeb5660fc2140aec35850c4da997"
-}, function (err) {
-	if (err) {
-		console.error (err);
-	} else {
-		$o.getClass ("ose.menu", function (err, cls) {
-			err ? console.error (err) : console.log (cls);
-		});
-	};
 });

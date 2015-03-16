@@ -8,12 +8,8 @@ objectum
 objectum.ru@gmail.com
 p7
 
-GITHUB
-
-objectum/objectum p7
-
-Error:
-assert, verror wrap
-
 Docs:
 jsdoc (grunt-jsdoc docco dox) ndoc
+
+session.queue. trigger ("idle"). Запросы от клиента последовательно выполнять.
+-> project.createClient. Тут тоже queue на случай если коннектов не хватает.

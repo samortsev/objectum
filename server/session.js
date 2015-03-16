@@ -11,8 +11,6 @@ var Session = Backbone.Model.extend (/** @lends Session.prototype */{
 	 **/
 	defaults: {
 		id: null,
-		username: null,
-		userId: null,
 		ip: null
 	},
 	/**
@@ -23,6 +21,10 @@ var Session = Backbone.Model.extend (/** @lends Session.prototype */{
 	initialize: function (opts) {
 		assert (opts);
 		var me = this;
+		//username: null,
+		//userId: null,
+		//roleId: null,
+		//multi: null
 		me.projects = {};
 	}
 });

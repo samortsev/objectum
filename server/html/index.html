@@ -1,27 +1,19 @@
 <script src="/socket.io/socket.io.js"></script>
+<script src="/js/underscore-min.js"></script>
+<script src="/js/backbone-min.js"></script>
+<script src="/js/objectum.js"></script>
 <script>
 	var socket = io ();
 	socket.on ("connect", function () {
-		/*
-		socket.emit ("cmd", {
-			pid: "prj",
-			type: "project",
-			action: "auth", // server: socket.join ("prj")
-			data: {
-				username: "admin",
-				password: "d033e22ae348aeb5660fc2140aec35850c4da997"
-			}
-		}, function (data) {
-			console.log (data);
-		});
-*/
-		socket.emit ("cmd", {
-			pid: "prj",
-			resource: "class",
-			action: "read",
-			data: "ose.menu"
-		}, function (data) {
-			console.log (data);
+		$o = new Objectum.Project ({
+			socket: socket,
+			id: "prj",
+			username: "admin",
+			password: "d033e22ae348aeb5660fc2140aec35850c4da997"
+		}).on ("connect", function () {
+			$o.getClass ("ose.menu", function (err, cls) {
+				err ? console.error (err) : console.log (cls);
+			});
 		});
 	});
 </script>

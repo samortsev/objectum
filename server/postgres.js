@@ -24,7 +24,7 @@ var Postgres = Backbone.Model.extend (/** @lends Postgres.prototype */{
 		dbDir: null,
 		connection: null,
 		adminConnection: null,
-		tags: {}
+		inTransaction: false
 	},
 	/**
 	 * @class Postgres
@@ -33,32 +33,32 @@ var Postgres = Backbone.Model.extend (/** @lends Postgres.prototype */{
 	 */
 	initialize: function (opts) {
 		assert (opts);
-		assert.fail (typeof (opts.pid), "string");
-		assert.fail (typeof (opts.rootDir), "string");
-		assert.fail (typeof (opts.host), "string");
-		assert.fail (typeof (opts.port), "number");
-		assert.fail (typeof (opts.dbaUsername), "string");
-		assert.fail (typeof (opts.dbaPassword), "string");
-		assert.fail (typeof (opts.dbUsername), "string");
-		assert.fail (typeof (opts.dbPassword), "string");
-		assert.fail (typeof (opts.dbDir), "string");
+		assert.equal (typeof (opts.pid), "string");
+		assert.equal (typeof (opts.rootDir), "string");
+		assert.equal (typeof (opts.host), "string");
+		assert.equal (typeof (opts.port), "number");
+		assert.equal (typeof (opts.dbaUsername), "string");
+		assert.equal (typeof (opts.dbaPassword), "string");
+		assert.equal (typeof (opts.dbUsername), "string");
+		assert.equal (typeof (opts.dbPassword), "string");
+		assert.equal (typeof (opts.dbDir), "string");
 		var me = this;
 		me.set ({
 			connection: "tcp://" + me.get ("dbUsername") + ":" + me.get ("dbPassword") + "@" + me.get ("host") + ":" + me.get ("port") + "/" + me.get ("id"),
 			adminConnection: "tcp://" + me.get ("dbaUsername") + ":" + me.get ("dbaPassword") + "@" + me.get ("host") + ":" + me.get ("port") + "/postgres"
-			tags: {
-				schema: me.get ("pid") + ".",
-				tablespace: "tablespace " + me.get ("pid"),
-				id: "bigserial",
-				number: "bigint",
-				number_value: "numeric",
-				text: "text",
-				timestamp: "timestamp (6)",
-				string: "varchar (1024)",
-				string_value: "text",
-				toc_id: "object_id bigint not null, primary key (object_id)"
-			}
 		});
+		me.tags = {
+			schema: me.get ("pid") + ".",
+			tablespace: "tablespace " + me.get ("pid"),
+			id: "bigserial",
+			number: "bigint",
+			number_value: "numeric",
+			text: "text",
+			timestamp: "timestamp (6)",
+			string: "varchar (1024)",
+			string_value: "text",
+			toc_id: "object_id bigint not null, primary key (object_id)"
+		};
 	},
 	/**
 	 * Connect to database
@@ -98,6 +98,31 @@ var Postgres = Backbone.Model.extend (/** @lends Postgres.prototype */{
 		var me = this;
 		console.log (sql);
 		me.client.query (sql, cb);
+	},
+	startTransaction: function (description, cb) {
+		var me = this;
+		me.query ("begin", function (err) {
+			if (err) {
+				cb (err);
+			} else {
+				me.set ({inTransaction: true});
+				cb ();
+			};
+		});
+	},
+	commitTransaction: function (cb) {
+		var me = this;
+		me.query ("commit", function (err) {
+			me.set ({inTransaction: false});
+			cb (err);
+		});
+	},
+	rollbackTransaction: function (cb) {
+		var me = this;
+		me.query ("rollback", function (err) {
+			me.set ({inTransaction: false});
+			cb (err);
+		});
 	},
 	/**
 	 * Create database
@@ -149,7 +174,7 @@ var Postgres = Backbone.Model.extend (/** @lends Postgres.prototype */{
 						if (err) {
 							cb (new VError (err, "Failed loading file %s", filename));
 						} else {
-							me.query (_.template (data)(me.get ("tags")), function (err) {
+							me.query (_.template (data)(me.tags), function (err) {
 								cb (err ? new VError (err, "Failed query:\n%s", _.template (data)(me.get ("tags"))) : null);
 							});
 						};
