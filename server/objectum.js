@@ -38,6 +38,9 @@ var Objectum = Backbone.Model.extend (/** @lends Objectum.prototype */{
 			res.sendFile (__dirname + "/public" + req.originalUrl);
 		});
 	},
+	createProject: function (id) {
+		var me = this;
+	},
 	/**
 	 * Called after doing asynchronous stuff.
 	 * @name Callback

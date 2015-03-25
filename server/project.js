@@ -11,6 +11,16 @@ var Sessions = Backbone.Collection.extend ({
 	model: Session
 });
 var Postgres = require (__dirname + "/postgres");
+var Resource = Backbone.Model.extend ({
+	sync: function (method, model, opts) {
+		var me = this;
+	}
+});
+var Class = Resource.extend ({
+	initialize: function (opts) {
+		this.rsc = "class";
+	}
+});
 var Project = Backbone.Model.extend (/** @lends Project.prototype */{
 	/**
 	 * Defaults

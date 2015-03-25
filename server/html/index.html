@@ -1,16 +1,14 @@
 <script src="/socket.io/socket.io.js"></script>
-<script src="/js/underscore-min.js"></script>
-<script src="/js/backbone-min.js"></script>
 <script src="/js/objectum.js"></script>
 <script>
 	var socket = io ();
 	socket.on ("connect", function () {
-		$o = new Objectum.Project ({
-			socket: socket,
+		var objectum = new Objectum ({socket: socket});
+		var $o = objectum.connect ({
 			id: "prj",
 			username: "admin",
 			password: "d033e22ae348aeb5660fc2140aec35850c4da997"
-		}).on ("connect", function () {
+		}, function () {
 			$o.getClass ("ose.menu", function (err, cls) {
 				err ? console.error (err) : console.log (cls);
 			});
