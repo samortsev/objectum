@@ -17,7 +17,7 @@ session.queue. trigger ("idle"). Запросы от клиента послед
 execute ({sql:
 	select
 		{"a": "name"},
-		{"a": "dateStart"} as date1,
+		{"a": "dateStart"},
 		{"b": "name"} as type
 	from
 		{"class": "org", "alias": "a"}
@@ -31,20 +31,21 @@ execute ({sql:
 }, 
 	function (err, result) {
 		_.each (result.rows, function (row) {
-			console.log (row._name, row.date1, row.type);
+			console.log (row.name, row.dateStart, row.type);
 		});
 	}
 );
 
+
 	select
 		a._name,
-		a._dateStart as date1,
+		a._datestart as date1,
 		b._name as type
 	from
 		_org a
 		left join _spr_org_type b on (a._type = b._id)
 	where
-		a._dateStart > '01.01.2000'
+		a._datestart > '01.01.2000'
 
 ose:
 	where
