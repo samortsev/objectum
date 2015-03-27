@@ -13,3 +13,40 @@ jsdoc (grunt-jsdoc docco dox) ndoc
 
 session.queue. trigger ("idle"). Запросы от клиента последовательно выполнять.
 -> project.createClient. Тут тоже queue на случай если коннектов не хватает.
+
+execute ({sql:
+	select
+		{"a": "name"},
+		{"a": "dateStart"} as date1,
+		{"b": "name"} as type
+	from
+		{"class": "org", "alias": "a"}
+		left join {"class": "spr.org.type", "alias": "b"} on ({"a": "type"} = {"b": "id"})
+	where
+		{"a": "dateStart"} > '01.01.2000'
+,
+	start: 10
+,
+	limit: 30
+}, 
+	function (err, result) {
+		_.each (result.rows, function (row) {
+			console.log (row._name, row.date1, row.type);
+		});
+	}
+);
+
+	select
+		a._name,
+		a._dateStart as date1,
+		b._name as type
+	from
+		_org a
+		left join _spr_org_type b on (a._type = b._id)
+	where
+		a._dateStart > '01.01.2000'
+
+ose:
+	where
+		(user where condition)
+		and exists (select _object_id from _ose_object where _subject_id in (roleId1, roleId2))
