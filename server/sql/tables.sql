@@ -118,7 +118,7 @@ create table <%=schema%>_query_attr (
 	_record_id <%=number%>
 ) <%=tablespace%>;
 
-create table <%=schema%>_action (
+create table <%=schema%>_method (
 	_id <%=id%> not null,
 	_class_id <%=number%>,
 	_name <%=string%>,

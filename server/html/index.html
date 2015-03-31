@@ -8,10 +8,39 @@
 			id: "prj",
 			username: "admin",
 			password: "d033e22ae348aeb5660fc2140aec35850c4da997"
-		}, function () {
+		}, function (err) {
+			if (err) {
+				return console.error (err);
+			};
 			$o.getClass ("ose.menu", function (err, cls) {
 				err ? console.error (err) : console.log (cls);
+//				cls.someAction ();
 			});
 		});
 	});
+/*
+	pid: "prj",
+	rid: "cls1",
+	method: "update",
+	data: {
+		serverMethods: [
+			"method1", "method2", "method3"
+		]
+	}
+
+	_.each (data, function (f) {
+		clsModel [f] = function (opts, cb) {
+			var me = this;
+			o.socket.emit ("cmd", {
+				pid: me.pid,
+				rid: me.rid,
+				method: f,
+				data: opts
+			}, function (err, opts) {
+				cb (err, opts);
+			});
+		};
+	});
+*/
 </script>
+

@@ -1,6 +1,12 @@
 //
 //	Copyright (C) 2015 Samortsev Dmitry (samortsev@gmail.com). All Rights Reserved.
 //
+/*
+	data: массив ресурсов
+	rsc: ресурс формата {pid, rid, method, data}
+	m (model, attrs): данные для загрузки в модель (rsc.data)
+	cmd: rsc + method
+*/
 var Backbone = require ("backbone");
 var _ = require ("underscore");
 var assert = require ("assert");
@@ -38,9 +44,6 @@ var Objectum = Backbone.Model.extend (/** @lends Objectum.prototype */{
 			res.sendFile (__dirname + "/public" + req.originalUrl);
 		});
 	},
-	createProject: function (id) {
-		var me = this;
-	},
 	/**
 	 * Called after doing asynchronous stuff.
 	 * @name Callback
@@ -63,7 +66,7 @@ var Objectum = Backbone.Model.extend (/** @lends Objectum.prototype */{
 			socket.on ("cmd", function (data, cb) {
 				if (typeof (data) == "object") {
 					data = _.isArray (data) ? data : [data];
-					me.processCmd (socket, data, cb);
+					me.onCmd (socket, data, cb);
 				} else {
 					cb (new VError ("Invalid cmd: %s", JSON.stringify (data)));
 				};
@@ -79,60 +82,59 @@ var Objectum = Backbone.Model.extend (/** @lends Objectum.prototype */{
 	 * @param {Object} res.err - Error in processing request.
 	 **/
 	/**
-	 * Processing command to project
+	 * Processing commands to project
 	 * @param {Object} data - Queue of commands.
 	 * @param {Socket-Callback} cb - Callback function.
 	 **/
-	processCmd: function (socket, data, scb) {
+	onCmd: function (socket, data, cb) {
 		var me = this;
-//		console.log ("cookie", socket.request.headers);
 		console.log (data);
-		var clients = {};
-		async.mapSeries (data, function (cmd, cb) {
-			if (typeof (data) == "object") {
-				var project = me.collection.project.get (cmd.pid);
-				if (project) {
-					var sid = null;
-					var tokens = socket.request.headers.cookie.match ("(^|;) ?sid=([^;]*)(;|$)");
-					if (tokens) {
-						sid = unescape (tokens [2]);
-					};
-					var session = project.collection.session.get (sid);
-					if (session) {
-						clients [cmd.pid] = clients [cmd.pid] || project.createClient (sid);
-						project.processCmd (clients [cmd.pid], cmd, cb);
-					} else {
-						cb (new VError ("Invalid sid: %s", sid));
-					};
-				} else {
-					cb (new VError ("Invalid pid: %s", cmd.pid));
-				};
-			} else {
-				cb (new VError ("Invalid cmd: %s", JSON.stringify (data)));
+		var pid = data [0].pid;
+		var project = me.collection.project.get (pid);
+		if (!project) {
+			return cb (new VError ("Invalid pid: %s", pid));
+		};
+		var sid = null;
+		var tokens = socket.request.headers.cookie.match ("(^|;) ?" + pid + "-sid=([^;]*)(;|$)");
+		if (tokens) {
+			sid = unescape (tokens [2]);
+		};
+		project.rm.getRsc ({rid: "session", filter: {id: sid}}, function (err, opts) {
+			if (err) {
+				return cb (new VError (err, "Invalid sid: %s", sid));
 			};
-		}, function (err, results) {
-			async.each (_.map (clients, function (c) {return c;}), function (client, cb) {
-				if (client.get ("inTransaction")) {
-					if (err) {
-						client.rollbackTransaction (function (err) {
-							cb ();
-						});
-					} else {
-						client.commitTransaction (function (err) {
-							cb ();
-						});
+			var session = opts.data [0];
+			session.project = project;
+			async.mapSeries (data, function (cmd, cb) {
+				if (typeof (cmd) == "object" && cmd.rid && cmd.method && cmd.data) {
+					if (cmd.pid != pid) {
+						return cb (new VError ("Different pid in one queue"));
 					};
+					project.onCmd (session, cmd, cb);
 				} else {
-					cb ();
+					cb (new VError ("Invalid cmd: %s", JSON.stringify (data)));
 				};
-			}, function (err) {
-				_.each (clients, function (client) {
-					client.disconnect ();
+			}, function (err, results) {
+				async.series ([
+					function (cb) {
+						if (session.client && session.client.get ("inTransaction")) {
+							if (err) {
+								session.client.rollbackTransaction (function (err) {
+									cb ();
+								});
+							} else {
+								session.client.commitTransaction (function (err) {
+									cb ();
+								});
+							};
+						} else {
+							cb ();
+						};
+					}
+				], function (err) {
+					session.disconnectClient ();
+					cb (err ? new VError (err, "objectum.onCmd error") : results);
 				});
-				if (results && results.length == 1) {
-					results = results [0];
-				};
-				scb (err ? new VError (err, "objectum.processCmd error") : results);
 			});
 		});
 	}

@@ -1,3 +1,7 @@
+Examples journey on site: hello world, посложнее пример, еще посложнее и т.д. вертикальная полоса обучения
+
+anonymous: no sid (site)
+
 NPM
 
 npm set init.author.name "Dmitry Samortsev"
