@@ -31,17 +31,16 @@ var Postgres = Backbone.Model.extend (/** @lends Postgres.prototype */{
 	 * @augments Backbone.Model
 	 * @constructs Postgres
 	 */
-	initialize: function (opts) {
-		assert (opts);
-		assert.equal (typeof (opts.pid), "string");
-		assert.equal (typeof (opts.rootDir), "string");
-		assert.equal (typeof (opts.host), "string");
-		assert.equal (typeof (opts.port), "number");
-		assert.equal (typeof (opts.dbaUsername), "string");
-		assert.equal (typeof (opts.dbaPassword), "string");
-		assert.equal (typeof (opts.dbUsername), "string");
-		assert.equal (typeof (opts.dbPassword), "string");
-		assert.equal (typeof (opts.dbDir), "string");
+	initialize: function () {
+		assert.equal (typeof (me.get ("pid")), "string");
+		assert.equal (typeof (me.get ("rootDir")), "string");
+		assert.equal (typeof (me.get ("host")), "string");
+		assert.equal (typeof (me.get ("port")), "number");
+		assert.equal (typeof (me.get ("dbaUsername")), "string");
+		assert.equal (typeof (me.get ("dbaPassword")), "string");
+		assert.equal (typeof (me.get ("dbUsername")), "string");
+		assert.equal (typeof (me.get ("dbPassword")), "string");
+		assert.equal (typeof (me.get ("dbDir")), "string");
 		var me = this;
 		me.set ({
 			connection: "tcp://" + me.get ("dbUsername") + ":" + me.get ("dbPassword") + "@" + me.get ("host") + ":" + me.get ("port") + "/" + me.get ("id"),
@@ -57,7 +56,7 @@ var Postgres = Backbone.Model.extend (/** @lends Postgres.prototype */{
 			timestamp: "timestamp (6)",
 			string: "varchar (1024)",
 			string_value: "text",
-			toc_id: "object_id bigint not null, primary key (object_id)"
+			toc_id: "_id bigint not null, primary key (_id)"
 		};
 	},
 	/**

@@ -19,7 +19,7 @@ var Session = Backbone.Model.extend (/** @lends Session.prototype */{
 	 * @augments Backbone.Model
 	 * @constructs Session
 	 */
-	initialize: function (opts) {
+	initialize: function () {
 		assert (opts);
 		var me = this;
 		me.proxy = {};

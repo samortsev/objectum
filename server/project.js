@@ -8,7 +8,6 @@ var VError = require ("verror");
 var async = require ("async");
 var Session = require (__dirname + "/session");
 var Postgres = require (__dirname + "/postgres");
-var ResourceManager = require (__dirname + "/resourceManager");
 var Project = Backbone.Model.extend (/** @lends Project.prototype */{
 	/**
 	 * Defaults
@@ -32,16 +31,15 @@ var Project = Backbone.Model.extend (/** @lends Project.prototype */{
 	 * @augments Backbone.Model
 	 * @constructs Project
 	 */
-	initialize: function (opts) {
-		assert (opts);
-		assert.equal (typeof (opts.rootDir), "string");
-		assert.equal (typeof (opts.id), "string");
-		assert.equal (typeof (opts.dbaPassword), "string");
+	initialize: function () {
 		var me = this;
+		assert.equal (typeof (me.get ("rootDir")), "string");
+		assert.equal (typeof (me.id), "string");
+		assert.equal (typeof (me.get ("dbaPassword")), "string");
 		me.set ({
-			dbUsername: me.get ("dbUsername") || opts.id,
-			dbPassword: me.get ("dbPassword") || opts.id,
-			dbDir: opts.rootDir + "/db"
+			dbUsername: me.get ("dbUsername") || me.id,
+			dbPassword: me.get ("dbPassword") || me.id,
+			dbDir: me.get ("dbDir") || (me.get ("rootDir") + "/db")
 		});
 		me.methodFn = {
 			"create": "create",
@@ -49,7 +47,8 @@ var Project = Backbone.Model.extend (/** @lends Project.prototype */{
 			"update": "update",
 			"delete": "remove"
 		};
-		me.rm = new ResourceManager ({project: me});
+		me.ResourceManager = require (__dirname + "/resourceManager");
+		me.rm = new me.ResourceManager ({pid: me.id});
 	},
 	/**
 	 * Create database client
@@ -113,8 +112,7 @@ var Project = Backbone.Model.extend (/** @lends Project.prototype */{
 				roleId: null,
 				pid: me.id
 			};
-			var session = new Session (attrs);
-			me.rm.createRsc ({rid: "session", attrs: attrs}, function (err) {
+			me.rm.createRsc ({rid: "session", attrs: attrs}, function (err, session) {
 				if (err) {
 					return cb (new VError (err, "Project.auth error"));
 				};

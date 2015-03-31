@@ -13,10 +13,6 @@ var assert = require ("assert");
 var VError = require ("verror");
 var async = require ("async");
 var fs = require ("fs");
-var Project = require (__dirname + "/project");
-var Projects = Backbone.Collection.extend ({
-	model: Project
-});
 var Objectum = Backbone.Model.extend (/** @lends Objectum.prototype */{
 	/**
 	 * @class Objectum
@@ -25,9 +21,12 @@ var Objectum = Backbone.Model.extend (/** @lends Objectum.prototype */{
 	 **/
 	initialize: function () {
 		var me = this;
-		me.Project = Project;
+		me.Project = require (__dirname + "/project");
+		me.Projects = Backbone.Collection.extend ({
+			model: me.Project
+		});
 		me.collection = {
-			"project": new Projects ()
+			"project": new me.Projects ()
 		};
 		me.app = require ("express")();
 		me.app.get ("/", function (req, res) {
@@ -101,6 +100,9 @@ var Objectum = Backbone.Model.extend (/** @lends Objectum.prototype */{
 		};
 		project.rm.getRsc ({rid: "session", filter: {id: sid}}, function (err, opts) {
 			if (err) {
+				return cb (new VError (err, "Objectum.onCmd error"));
+			};
+			if (!opts.data.length) {
 				return cb (new VError (err, "Invalid sid: %s", sid));
 			};
 			var session = opts.data [0];

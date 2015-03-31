@@ -3,6 +3,8 @@ var _ = require ("underscore");
 var assert = require ("assert");
 var VError = require ("verror");
 var async = require ("async");
+var objectum = require (__dirname + "/objectum");
+var Session = require (__dirname + "/session");
 var Resource = Backbone.Model.extend ({
 	sync: function (method, model, opts) {
 		var me = this;
@@ -31,9 +33,10 @@ var Resource = Backbone.Model.extend ({
 	}
 });
 var Class = Resource.extend ({
-	initialize: function (opts) {
-		this.rid = "class";
-		this.project = opts.project;
+	initialize: function () {
+		var me = this;
+		me.rid = "class";
+		me.project = objectum.collection ["project"].get (me.get ("pid"));
 	},
 	getAttrs: function () {
 		var me = this;
@@ -46,39 +49,60 @@ var Class = Resource.extend ({
 	}
 });
 var ClassAttr = Resource.extend ({
-	initialize: function (opts) {
+	initialize: function () {
 		this.rid = "classAttr";
 	}
 });
 var Object = Resource.extend ({
-	initialize: function (opts) {
+	initialize: function () {
 		this.rid = "object";
 	}
 });
 var View = Resource.extend ({
-	initialize: function (opts) {
+	initialize: function () {
 		this.rid = "view";
 	}
 });
 var Query = Resource.extend ({
-	initialize: function (opts) {
+	initialize: function () {
 		this.rid = "query";
 	}
 });
 var QueryAttr = Resource.extend ({
-	initialize: function (opts) {
+	initialize: function () {
 		this.rid = "queryAttr";
 	}
 });
 var Action = Resource.extend ({
-	initialize: function (opts) {
+	initialize: function () {
 		this.rid = "action";
 	}
 });
+var Classes = Backbone.Collection.extend ({
+	model: Class
+});
+var ClassAttrs = Backbone.Collection.extend ({
+	model: ClassAttr
+});
+var Views = Backbone.Collection.extend ({
+	model: View
+});
+var Queries = Backbone.Collection.extend ({
+	model: Query
+});
+var QueryAttrs = Backbone.Collection.extend ({
+	model: QueryAttr
+});
+var Actions = Backbone.Collection.extend ({
+	model: Action
+});
+var Sessions = Backbone.Collection.extend ({
+	model: Session
+});
 var ResourceManager = Backbone.Model.extend ({
-	initialize: function (opts) {
+	initialize: function () {
 		var me = this;
-		me.project = opts.project;
+		me.project = objectum.collection ["project"].get (me.get ("pid"));
 		me.collection = {
 			"class": new Classes (),
 			"classAttr": new ClassAttrs (),
@@ -86,14 +110,14 @@ var ResourceManager = Backbone.Model.extend ({
 			"query": new Queries (),
 			"queryAttr": new QueryAttrs (),
 			"action": new Actions (),
-			"session": new Sessions (),
-			"project": new Projects (),
 			"session": new Sessions ()
 		};
+		/*
 		me.redis = require ("redis").createClient ();
 		me.redisPub = require ("redis").createClient ();
 		me.redisSub = require ("redis").createClient ();
 		me.redisSub.on ("cmd", me.onCmd);
+		*/
 		me.ridTable = {
 			"class": "_class",
 			"classAttr": "_class_attr",
@@ -235,17 +259,20 @@ var ResourceManager = Backbone.Model.extend ({
 		var session = opts.session;
 		var rid = opts.rid;
 		var attrs = opts.attrs;
-		async.series ([
+		async.waterfall ([
 			function (cb) {
 				if (rid == "session") {
-					me.collection ["session"].add (attrs);
-					redis.hset (me.project.id + "-" + rid, {id: data.id}, attrs, cb);
+					var m = me.createModel ("session", attrs);
+					me.collection ["session"].add (m);
+					redis.hset (me.project.id + "-" + rid, {id: data.id}, attrs, function (err) {
+						cb (err, m);
+					});
 				} else {
 					cb ();
 				};
 			}
-		], function (err) {
-			cb (err ? new VError (err, "ResourceManager.createRsc error") : null);
+		], function (err, m) {
+			cb (err ? new VError (err, "ResourceManager.createRsc error") : null, m);
 		});
 	},
 	// Загружает ресурсы удовлетворяющие условию filter ({id: id}, {classId: classId}, {queryId: queryId})
@@ -287,7 +314,7 @@ var ResourceManager = Backbone.Model.extend ({
 					return cb (null, opts);
 				};
 				if (rid == "session") {
-					return cb ("Unknown sid");
+					return cb ({data: []});
 				};
 				var filterStr = _.map (filter, function (value, attr) {
 					return me.ridFields [rid][attr] + "=" + value;

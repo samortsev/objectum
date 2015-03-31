@@ -66,11 +66,12 @@ create index _query_attr_end_id on <%=schema%>_query_attr (_end_id) <%=tablespac
 create index _query_attr_project_id on <%=schema%>_query_attr (_project_id) <%=tablespace%>;
 create index _query_attr_record_id on <%=schema%>_query_attr (_record_id) <%=tablespace%>;
 
-create index _method_id on <%=schema%>_method (_id) <%=tablespace%>;
-create index _method_name on <%=schema%>_method (_name);
-create index _method_code on <%=schema%>_method (_code);
-create index _method_class_id on <%=schema%>_method (_class_id) <%=tablespace%>;
-create index _method_start_id on <%=schema%>_method (_start_id) <%=tablespace%>;
-create index _method_end_id on <%=schema%>_method (_end_id) <%=tablespace%>;
-create index _method_project_id on <%=schema%>_method (_project_id) <%=tablespace%>;
-create index _method_record_id on <%=schema%>_method (_record_id) <%=tablespace%>;
+create index _action_id on <%=schema%>_action (_id) <%=tablespace%>;
+create index _action_name on <%=schema%>_action (_name);
+create index _action_code on <%=schema%>_action (_code);
+create index _action_class_id on <%=schema%>_action (_class_id) <%=tablespace%>;
+create index _action_action_id on <%=schema%>_action (_action_id) <%=tablespace%>;
+create index _action_start_id on <%=schema%>_action (_start_id) <%=tablespace%>;
+create index _action_end_id on <%=schema%>_action (_end_id) <%=tablespace%>;
+create index _action_project_id on <%=schema%>_action (_project_id) <%=tablespace%>;
+create index _action_record_id on <%=schema%>_action (_record_id) <%=tablespace%>;
